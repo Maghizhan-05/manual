@@ -106,6 +106,13 @@
       display: block;
       margin: 10px 0;
     }
+
+    #viewer .highlight {
+      background: yellow;
+      color: #000;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
   </style>
 </head>
 <body>
@@ -228,11 +235,29 @@ function loadTopicSections(el) {
 }
 
 function filterSections() {
-  const term = document.getElementById('searchBox').value.toLowerCase();
-  const all = document.getElementById('viewer').querySelectorAll(".section-block");
+  const term = document.getElementById('searchBox').value;
+  const all = document.getElementById('viewer').querySelectorAll('.section-block');
 
   all.forEach(el => {
-    el.style.display = el.innerText.toLowerCase().includes(term) ? "" : "none";
+    // Remove previous highlights
+    el.innerHTML = el.innerHTML.replace(/<span class="highlight">(.*?)<\/span>/gi, '$1');
+    if (!term) {
+      el.style.display = '';
+      return;
+    }
+    const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    let found = false;
+    el.childNodes.forEach(node => {
+      if (node.nodeType === 3) { // Text node
+        if (regex.test(node.textContent)) found = true;
+      }
+    });
+    // Highlight matches in HTML
+    el.innerHTML = el.innerHTML.replace(regex, match => {
+      found = true;
+      return `<span class="highlight">${match}</span>`;
+    });
+    el.style.display = found ? '' : 'none';
   });
 }
 </script>
