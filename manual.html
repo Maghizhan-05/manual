@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MFUND Manual Viewer</title>
+  <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #1f4e79;
+      --secondary-color: #163a5f;
+      --text-light: #ffffff;
+      --text-dark: #333333;
+      --hover-bg: #dce3eb;
+      --border: #cccccc;
+      --bg-light: #f4f4f4;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: var(--bg-light);
+    }
+
+    nav {
+      background-color: var(--primary-color);
+    }
+
+    nav ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+
+    nav li {
+      position: relative;
+    }
+
+    nav li a {
+      display: block;
+      color: var(--text-light);
+      padding: 12px 20px;
+      text-decoration: none;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    nav li:hover > a {
+      background-color: var(--secondary-color);
+    }
+
+    nav li ul {
+      display: none;
+      position: absolute;
+      background-color: var(--text-light);
+      min-width: 240px;
+      top: 100%;
+      left: 0;
+      z-index: 1000;
+      border: 1px solid var(--border);
+    }
+
+    nav li:hover > ul {
+      display: block;
+    }
+
+    nav li ul li a {
+      color: var(--text-dark);
+      background-color: var(--text-light);
+      padding: 10px 15px;
+      font-size: 13px;
+    }
+
+    nav li ul ul {
+      top: 0;
+      left: 100%;
+    }
+
+    nav li ul li a:hover {
+      background-color: var(--hover-bg);
+    }
+
+    #searchBox {
+      width: 100%;
+      max-width: 1000px;
+      display: block;
+      margin: 20px auto 10px;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+    }
+
+    #viewer {
+      padding: 30px;
+      background: var(--text-light);
+      margin: 20px auto;
+      max-width: 1000px;
+      min-height: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
+
+    #viewer img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 10px 0;
+  }
+  </style>
+</head>
+<body>
+
+
+<nav>
+  <ul>
+    <li>
+      <a href="#">Operations</a>
+      <ul>
+        <li><a href="#" onclick="loadTopicSections(this)">Version History</a></li>
+        <li>
+          <a href="#">Income Distribution ▶</a>
+          <ul>
+            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Calendar</a></li>
+            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Scheduler</a></li>
+            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Authorisation</a></li>
+            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Calendar Upload</a></li>
+          </ul>
+        </li>
+        <li><a href="#" onclick="loadTopicSections(this)">Security Block</a></li>
+        <li><a href="#" onclick="loadTopicSections(this)">Access Master</a></li>
+        <li><a href="#" onclick="loadTopicSections(this)">Valuation Price Uploads</a></li>
+      </ul>
+    </li>
+
+    <li>
+      <a href="#">Settlement</a>
+      <ul>
+        <li><a href="#" onclick="loadTopicSections(this)">Bank Settlement</a></li>
+        <li><a href="#" onclick="loadTopicSections(this)">Reset User Status</a></li>
+        <li><a href="#" onclick="loadTopicSections(this)">Officiate User</a></li>
+      </ul>
+    </li>
+
+    <li>
+      <a href="#">Reports</a>
+      <ul>
+        <li><a href="#" onclick="loadTopicSections(this)">Scheme Release Process</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#">Admin</a>
+      <ul>
+        <li><a href="#" onclick="loadTopicSections(this)">User Master Screen</a></li>
+        <li><a href="#" onclick="loadTopicSections(this)">Role and Access permission</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#">Help</a>
+      <ul>
+        <li><a href="#" onclick="loadTopicSections(this)">About Azentio Software</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+<input type="text" id="searchBox" placeholder="Search inside document..." oninput="filterSections()" />
+
+<div id="viewer">
+  <p>📄 Select a section from the menu to view all matching entries.</p>
+</div>
+
+<script>
+const docFiles = [
+  'public/docs/operations/creation.docx',
+  'public/docs/operations/income_distribution.docx',
+  'public/docs/reports/admin.docx',
+  'public/docs/settelement/eod.docx'
+];
+
+function loadTopicSections(el) {
+  const topic = el.textContent.trim();
+  document.getElementById('searchBox').value = '';
+  document.getElementById('viewer').innerHTML = "<p>⏳ Searching documents...</p>";
+
+  const loadPromises = docFiles.map(file =>
+    fetch(file)
+      .then(res => res.arrayBuffer())
+      .then(buffer => mammoth.convertToHtml({ arrayBuffer: buffer }))
+      .then(result => ({ file, html: result.value }))
+      .catch(() => ({ file, html: '' }))
+  );
+
+  Promise.all(loadPromises).then(results => {
+    let allMatches = '';
+
+    results.forEach(({ file, html }) => {
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+
+      const nodes = Array.from(temp.children);
+      let found = false;
+      let section = '';
+      let title = '';
+
+      nodes.forEach((node, i) => {
+        const text = node.innerText?.trim().toLowerCase();
+        if (text && text === topic.toLowerCase()) {
+          found = true;
+          title = node.innerText;
+          section = `<h2>${title}</h2>`;
+          for (let j = i + 1; j < nodes.length; j++) {
+            if (nodes[j].tagName.startsWith('H') && nodes[j].innerText.trim() !== '') break;
+            section += nodes[j].outerHTML;
+          }
+        }
+      });
+
+      if (found) {
+        allMatches += `<div class="section-block" style="margin-bottom:40px;">
+          <h3 style="color:#444;">📄 From: ${file}</h3>
+          ${section}
+        </div>`;
+      }
+    });
+
+    document.getElementById('viewer').innerHTML =
+      allMatches || `<p style='color:red;'>❌ No matches found for "<b>${topic}</b>".</p>`;
+  });
+}
+
+function filterSections() {
+  const term = document.getElementById('searchBox').value.toLowerCase();
+  const all = document.getElementById('viewer').querySelectorAll(".section-block");
+
+  all.forEach(el => {
+    el.style.display = el.innerText.toLowerCase().includes(term) ? "" : "none";
+  });
+}
+</script>
+
+</body>
+</html>
