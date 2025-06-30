@@ -252,22 +252,32 @@ function filterSections() {
 
   function highlightText(node, regex) {
     if (node.nodeType === 3) { // Text node
-      const matches = node.textContent.match(regex);
-      if (matches) {
-        const frag = document.createDocumentFragment();
-        let lastIdx = 0;
-        node.textContent.replace(regex, (match, idx) => {
-          frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx, idx)));
-          const span = document.createElement('span');
-          span.className = 'highlight';
-          span.textContent = match;
-          frag.appendChild(span);
-          lastIdx = idx + match.length;
-        });
-        frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx)));
-        node.replaceWith(frag);
-        return true;
+      let text = node.textContent;
+      let match, lastIndex = 0;
+      let found = false;
+      const frag = document.createDocumentFragment();
+      regex.lastIndex = 0;
+      while ((match = regex.exec(text)) !== null) {
+        found = true;
+        // Add text before match
+        if (match.index > lastIndex) {
+          frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+        }
+        // Add highlighted match
+        const span = document.createElement('span');
+        span.className = 'highlight';
+        span.textContent = match[0];
+        frag.appendChild(span);
+        lastIndex = match.index + match[0].length;
+        // Prevent infinite loop for zero-length matches
+        if (match.index === regex.lastIndex) regex.lastIndex++;
       }
+      // Add remaining text
+      if (found) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+        node.replaceWith(frag);
+      }
+      return found;
     } else if (node.nodeType === 1 && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
       let found = false;
       node.childNodes.forEach(child => {
@@ -284,7 +294,13 @@ function filterSections() {
       el.style.display = '';
       return;
     }
-    const regex = new RegExp(term.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'), 'gi');
+    // Only highlight if term is not empty and not just spaces
+    const safeTerm = term.trim();
+    if (!safeTerm) {
+      el.style.display = '';
+      return;
+    }
+    const regex = new RegExp(safeTerm.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'), 'gi');
     let found = highlightText(el, regex);
     el.style.display = found ? '' : 'none';
   });
