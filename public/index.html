@@ -238,25 +238,54 @@ function filterSections() {
   const term = document.getElementById('searchBox').value;
   const all = document.getElementById('viewer').querySelectorAll('.section-block');
 
+  function removeHighlights(node) {
+    if (node.nodeType === 1) { // Element
+      // Remove highlight spans
+      const highlights = node.querySelectorAll('span.highlight');
+      highlights.forEach(span => {
+        span.replaceWith(document.createTextNode(span.textContent));
+      });
+      // Recursively clean children
+      node.childNodes.forEach(removeHighlights);
+    }
+  }
+
+  function highlightText(node, regex) {
+    if (node.nodeType === 3) { // Text node
+      const matches = node.textContent.match(regex);
+      if (matches) {
+        const frag = document.createDocumentFragment();
+        let lastIdx = 0;
+        node.textContent.replace(regex, (match, idx) => {
+          frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx, idx)));
+          const span = document.createElement('span');
+          span.className = 'highlight';
+          span.textContent = match;
+          frag.appendChild(span);
+          lastIdx = idx + match.length;
+        });
+        frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx)));
+        node.replaceWith(frag);
+        return true;
+      }
+    } else if (node.nodeType === 1 && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
+      let found = false;
+      node.childNodes.forEach(child => {
+        if (highlightText(child, regex)) found = true;
+      });
+      return found;
+    }
+    return false;
+  }
+
   all.forEach(el => {
-    // Remove previous highlights
-    el.innerHTML = el.innerHTML.replace(/<span class="highlight">(.*?)<\/span>/gi, '$1');
+    removeHighlights(el);
     if (!term) {
       el.style.display = '';
       return;
     }
-    const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    let found = false;
-    el.childNodes.forEach(node => {
-      if (node.nodeType === 3) { // Text node
-        if (regex.test(node.textContent)) found = true;
-      }
-    });
-    // Highlight matches in HTML
-    el.innerHTML = el.innerHTML.replace(regex, match => {
-      found = true;
-      return `<span class="highlight">${match}</span>`;
-    });
+    const regex = new RegExp(term.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'), 'gi');
+    let found = highlightText(el, regex);
     el.style.display = found ? '' : 'none';
   });
 }
