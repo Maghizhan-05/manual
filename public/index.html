@@ -6,97 +6,184 @@
   <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
   <style>
     :root {
-      --primary-color: #1f4e79;
-      --secondary-color: #163a5f;
+      --primary-blue: #2A67A1;
+      --active-tab-blue: #3483CB;
+      --header-bg: #EAEFF5;
+      --widget-header-bg: linear-gradient(to bottom, #F5F5F5, #E8E8E8);
+      --border-color: #B6B6B6;
       --text-light: #ffffff;
       --text-dark: #333333;
-      --hover-bg: #dce3eb;
-      --border: #cccccc;
-      --bg-light: #f4f4f4;
+      --bg-light: #F4F4F4;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      --dropdown-bg: #FFFFFF;
+      --dropdown-hover-bg: #E3F2FD;
+      --dropdown-border: #CCCCCC;
     }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: var(--font-family);
       margin: 0;
       background-color: var(--bg-light);
+      font-size: 12px;
     }
 
+    /* Page Header */
+    .page-header {
+      background-color: var(--header-bg);
+      padding: 5px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-dark);
+    }
+    .page-header .left-section,
+    .page-header .center-section,
+    .page-header .right-section {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .page-header .logo {
+        font-weight: bold;
+        color: var(--primary-blue);
+        font-size: 18px;
+    }
+    .page-header .info-item {
+        font-size: 11px;
+    }
+    .page-header .quick-links a {
+      color: var(--text-dark);
+      text-decoration: none;
+      font-size: 11px;
+      padding: 5px 8px;
+      border-radius: 3px;
+    }
+    .page-header .quick-links a:hover {
+      background-color: #dce3eb;
+    }
+
+    /* Main Navigation Tabs */
     nav {
-      background-color: var(--primary-color);
+      background-color: var(--primary-blue);
+      z-index: 1000;
+      position: relative;
     }
-
     nav ul {
       list-style-type: none;
       margin: 0;
-      padding: 0;
+      padding: 0 5px;
       display: flex;
     }
-
-    nav li {
-      position: relative;
+    nav ul li {
+        position: relative; /* This is crucial for dropdown positioning */
     }
-
-    nav li a {
+    nav > ul > li > a {
       display: block;
       color: var(--text-light);
-      padding: 12px 20px;
-      text-decoration: none;
-      font-size: 14px;
-      white-space: nowrap;
-    }
-
-    nav li:hover > a {
-      background-color: var(--secondary-color);
-    }
-
-    nav li ul {
-      display: none;
-      position: absolute;
-      background-color: var(--text-light);
-      min-width: 240px;
-      top: 100%;
-      left: 0;
-      z-index: 1000;
-      border: 1px solid var(--border);
-    }
-
-    nav li:hover > ul {
-      display: block;
-    }
-
-    nav li ul li a {
-      color: var(--text-dark);
-      background-color: var(--text-light);
       padding: 10px 15px;
+      text-decoration: none;
       font-size: 13px;
+      white-space: nowrap;
+      border-right: 1px solid #4B7BAA;
+    }
+    nav > ul > li:first-child > a {
+        border-left: 1px solid #4B7BAA;
+    }
+    nav > ul > li > a.active,
+    nav > ul > li:hover > a {
+      background-color: var(--active-tab-blue);
     }
 
-    nav li ul ul {
-      top: 0;
-      left: 100%;
+    /* Dropdown Menus */
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: 100%;
+        background-color: var(--dropdown-bg);
+        border: 1px solid var(--dropdown-border);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        min-width: 240px;
+        list-style: none;
+        padding: 5px 0;
+        margin: 0;
+    }
+    nav ul li:hover > .dropdown-menu {
+        display: block;
+    }
+    .dropdown-menu li a {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 15px;
+        text-decoration: none;
+        color: var(--text-dark);
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    .dropdown-menu li a:hover {
+        background-color: var(--dropdown-hover-bg);
+        color: var(--primary-blue);
+    }
+    .dropdown-menu li .arrow {
+        font-size: 10px;
+        margin-left: 10px;
     }
 
-    nav li ul li a:hover {
-      background-color: var(--hover-bg);
+    /* Nested Sub-menus */
+    .submenu {
+        display: none;
+        position: absolute;
+        left: 100%;
+        top: -6px; /* Adjust for vertical alignment */
+    }
+    .dropdown-menu li:hover > .submenu {
+        display: block;
     }
 
+
+    /* Main Content Area */
+    .content-area {
+        padding: 15px;
+    }
+    .breadcrumbs {
+        color: var(--primary-blue);
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    /* Widget Style */
+    .widget {
+        border: 1px solid var(--border-color);
+        background-color: #fff;
+    }
+    .widget-header {
+        background: var(--widget-header-bg);
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border-color);
+        font-weight: bold;
+        color: var(--text-dark);
+    }
+    .widget-content {
+        padding: 15px;
+    }
+    
     #searchBox {
       width: 100%;
-      max-width: 1000px;
       display: block;
-      margin: 20px auto 10px;
-      padding: 10px;
+      margin: 0 0 15px 0;
+      padding: 8px;
       font-size: 14px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-color);
+      box-sizing: border-box;
     }
 
     #viewer {
-      padding: 30px;
+      padding: 20px;
       background: var(--text-light);
-      margin: 20px auto;
-      max-width: 1000px;
       min-height: 400px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+      border: 1px solid #ddd;
       overflow-y: auto;
     }
 
@@ -106,74 +193,217 @@
       display: block;
       margin: 10px 0;
     }
-
+    
     #viewer .highlight {
-      background: yellow;
-      color: #000;
-      padding: 0 2px;
-      border-radius: 2px;
+        background: yellow;
+        color: #000;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+
+    /* Footer */
+    footer {
+        background-color: #EAEAEA;
+        border-top: 1px solid var(--border-color);
+        padding: 8px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: #555;
     }
   </style>
 </head>
 <body>
 
+<header class="page-header">
+    <div class="left-section">
+        <div class="logo">MFUND</div>
+    </div>
+</header>
+
 <nav>
   <ul>
     <li>
-      <a href="#">Operations</a>
-      <ul>
-        <li><a href="#" onclick="loadTopicSections(this)">Version History</a></li>
-        <li>
-          <a href="#">Income Distribution ▶</a>
-          <ul>
-            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Calendar</a></li>
-            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Scheduler</a></li>
-            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Authorisation</a></li>
-            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Calendar Upload</a></li>
-          </ul>
-        </li>
-        <li><a href="#" onclick="loadTopicSections(this)">Security Block</a></li>
-        <li><a href="#" onclick="loadTopicSections(this)">Access Master</a></li>
-        <li><a href="#" onclick="loadTopicSections(this)">Valuation Price Uploads</a></li>
-      </ul>
-    </li>
-
-    <li>
-      <a href="#">Settlement</a>
-      <ul>
-        <li><a href="#" onclick="loadTopicSections(this)">Bank Settlement</a></li>
-        <li><a href="#" onclick="loadTopicSections(this)">Reset User Status</a></li>
-        <li><a href="#" onclick="loadTopicSections(this)">Officiate User</a></li>
-      </ul>
-    </li>
-
-    <li>
-      <a href="#">Reports</a>
-      <ul>
-        <li><a href="#" onclick="loadTopicSections(this)">Scheme Release Process</a></li>
-      </ul>
+        <a href="#" class="active">Dashboard</a>
+        <ul class="dropdown-menu">
+            <li><a href="#">Concentration Analysis</a></li>
+            <li><a href="#">Capital and NAV</a></li>
+            <li><a href="#">Holding</a></li>
+            <li><a href="#">Holding Analysis</a></li>
+            <li><a href="#">Fund Manager Landing Page</a></li>
+            <li><a href="#">Dealer Landing Page</a></li>
+            <li><a href="#">Debt Dealer Landing Page</a></li>
+            <li><a href="#">CIO Landing Page</a></li>
+            <li><a href="#">Mid Office Landing Page</a></li>
+            <li><a href="#">Operations Landing Page</a></li>
+            <li><a href="#">Todays Deal</a></li>
+            <li><a href="#">Index vs Portfolio Weightage</a></li>
+            <li><a href="#">Firm Dashboard <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+            <li><a href="#">Compliance Enquiry <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+            <li><a href="#">Enquiries <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+            <li><a href="#">Dynamic Dashboard</a></li>
+        </ul>
     </li>
     <li>
-      <a href="#">Admin</a>
-      <ul>
-        <li><a href="#" onclick="loadTopicSections(this)">User Master Screen</a></li>
-        <li><a href="#" onclick="loadTopicSections(this)">Role and Access permission</a></li>
-      </ul>
+        <a href="#">Dealing</a>
+        <ul class="dropdown-menu">
+            <li><a href="#">Equity <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+            <li><a href="#">Debt <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+            <li><a href="#">Primary Market <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+            <li><a href="#">Inter Fund Transfer</a></li>
+            <li><a href="#">Mutual Fund Units <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+            <li><a href="#">Common</a></li>
+            <li><a href="#">Fixed Deposit <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+            <li><a href="#">Trade Download <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+        </ul>
     </li>
     <li>
-      <a href="#">Help</a>
-      <ul>
-        <li><a href="#" onclick="loadTopicSections(this)">About Azentio Software</a></li>
-      </ul>
+        <a href="#">Analytics</a>
+        <ul class="dropdown-menu">
+            <li><a href="#">Model Rebalancer <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+            </li>
+            <li><a href="#">Applicable Yield</a></li>
+        </ul>
     </li>
+    <li>
+        <a href="#">Setup</a>
+        <ul class="dropdown-menu">
+            <li><a href="#">Fund Info <span class="arrow">▶</span></a></li>
+            <li><a href="#">Security Info <span class="arrow">▶</span></a></li>
+            <li><a href="#">Party Info <span class="arrow">▶</span></a></li>
+            <li><a href="#">Fees & Charges <span class="arrow">▶</span></a></li>
+            <li><a href="#">Exchange Info <span class="arrow">▶</span></a></li>
+            <li><a href="#">Workflow <span class="arrow">▶</span></a></li>
+            <li><a href="#" onclick="loadTopicSections(this)">User Setup & Access <span class="arrow">▶</span></a></li>
+            <li><a href="#">Country-Exch <span class="arrow">▶</span></a></li>
+            <li><a href="#">Task Scheduler <span class="arrow">▶</span></a></li>
+            <li><a href="#">Expense Master <span class="arrow">▶</span></a></li>
+            <li><a href="#">Common Field Master</a></li>
+            <li><a href="#">Custom Field Setup</a></li>
+            <li><a href="#">Compliance <span class="arrow">▶</span></a></li>
+            <li><a href="#">System Information</a></li>
+            <li><a href="#">Configuration setup</a></li>
+            <li><a href="#">Deal Status Widget setup</a></li>
+            <li><a href="#">Query Writer</a></li>
+        </ul>
+    </li>
+    <li>
+        <a href="#">Operations</a>
+        <ul class="dropdown-menu">
+            <li><a href="#">Creation / Redemption of Units</a></li>
+            <li><a href="#">Corporate Action</a></li>
+            <li><a href="#">Online Corporate Action</a></li>
+            <li><a href="#">Demerger Cost Adjustment</a></li>
+            <li><a href="#">Rights Merger</a></li>
+            <li><a href="#">Rights Application Module</a></li>
+            <li><a href="#">Bank Transactions</a></li>
+            <li><a href="#">Entitlement Adjustment</a></li>
+            <li><a href="#">Journal Transactions</a></li>
+            <li><a href="#">Investment Journal - Securities</a></li>
+            <li><a href="#">Inter Bank Transfer</a></li>
+            <li><a href="#">Bulk Authorisation</a></li>
+            <li><a href="#">Bulk Deletion</a></li>
+            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution <span class="arrow">▶</span></a>
+                 <ul class="dropdown-menu submenu">
+                    <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Calendar</a></li>
+                    <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Scheduler</a></li>
+                 </ul>
+            </li>
+            <li><a href="#" onclick="loadTopicSections(this)">Security Block</a></li>
+            <li><a href="#">Expense Transfer</a></li>
+            <li><a href="#">ISS Integration</a></li>
+        </ul>
+    </li>
+    <li>
+        <a href="#">Interfaces</a>
+        <ul class="dropdown-menu">
+            <li><a href="#">Upload</a></li>
+        </ul>
+    </li>
+    <li>
+        <a href="#">Settlement</a>
+        <ul class="dropdown-menu">
+            <li><a href="#" onclick="loadTopicSections(this)">Settlement</a></li>
+            <li><a href="#">Settlement Date Change</a></li>
+            <li><a href="#">Payment Schedule</a></li>
+        </ul>
+    </li>
+    <li>
+        <a href="#">GL & Valuation</a>
+        <ul class="dropdown-menu">
+            <li><a href="#">Projection</a></li>
+            <li><a href="#">Pre EOD check</a></li>
+            <li><a href="#">EOD</a></li>
+            <li><a href="#">Setup <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu">
+                    <li><a href="#">Market Price Update (Manual)</a></li>
+                    <li><a href="#">Exchange Rate</a></li>
+                    <li><a href="#">Transaction Type</a></li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+    <li>
+        <a href="#">CMS</a>
+        <ul class="dropdown-menu">
+            <li><a href="#">Bank Master</a></li>
+            <li><a href="#">Bank Account Master</a></li>
+            <li><a href="#">Accounting Rule Definition</a></li>
+            <li><a href="#">Registrar Transactions</a></li>
+            <li><a href="#">Registrar Transactions Delete</a></li>
+            <li><a href="#">Expenses Settlement</a></li>
+            <li><a href="#">Expenses Settlement Delete</a></li>
+            <li><a href="#">Cashflow Projection Report</a></li>
+            <li><a href="#">CMS Settlement Date Change</a></li>
+        </ul>
+    </li>
+    <li><a href="#">Reports</a></li>
+    <li><a href="#">DQE</a></li>
   </ul>
 </nav>
 
-<input type="text" id="searchBox" placeholder="Search inside document..." oninput="filterSections()" />
+<main class="content-area">
+    <div class="breadcrumbs">Dashboard ➤ Holding</div>
 
-<div id="viewer">
-  <p>📄 Select a section from the menu to view all matching entries.</p>
-</div>
+    <div class="widget">
+        <div class="widget-header">
+            MFUND Manual Viewer
+        </div>
+        <div class="widget-content">
+            <input type="text" id="searchBox" placeholder="Search inside loaded document..." oninput="filterSections()" />
+            <div id="viewer">
+              <p>📄 Select a section from the menu to view its documentation. Some menu items (like 'Security Block' or 'Settlement') are linked to the document viewer.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <div>Privacy Statement</div>
+    <div>Version : MFV/P6.0 , Environment : UTT</div>
+    <div>Powered by Azentio</div>
+</footer>
+
 
 <script>
 const docFiles = [
@@ -184,9 +414,9 @@ const docFiles = [
 ];
 
 function loadTopicSections(el) {
-  const topic = el.textContent.trim();
+  const topic = el.textContent.trim().replace(/▶/g, '').trim(); // Get topic from clicked element
   document.getElementById('searchBox').value = '';
-  document.getElementById('viewer').innerHTML = "<p>⏳ Searching documents...</p>";
+  document.getElementById('viewer').innerHTML = `<p>⏳ Searching documents for "<b>${topic}</b>"...</p>`;
 
   const loadPromises = docFiles.map(file =>
     fetch(file)
@@ -236,74 +466,48 @@ function loadTopicSections(el) {
 
 function filterSections() {
   const term = document.getElementById('searchBox').value;
-  const all = document.getElementById('viewer').querySelectorAll('.section-block');
+  const viewer = document.getElementById('viewer');
 
-  function removeHighlights(node) {
-    if (node.nodeType === 1) { // Element
-      // Remove highlight spans
-      const highlights = node.querySelectorAll('span.highlight');
-      highlights.forEach(span => {
-        span.replaceWith(document.createTextNode(span.textContent));
-      });
-      // Recursively clean children
-      node.childNodes.forEach(removeHighlights);
-    }
-  }
-
-  function highlightText(node, regex) {
-    if (node.nodeType === 3) { // Text node
-      let text = node.textContent;
-      let match, lastIndex = 0;
-      let found = false;
-      const frag = document.createDocumentFragment();
-      regex.lastIndex = 0;
-      while ((match = regex.exec(text)) !== null) {
-        found = true;
-        // Add text before match
-        if (match.index > lastIndex) {
-          frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
-        }
-        // Add highlighted match
-        const span = document.createElement('span');
-        span.className = 'highlight';
-        span.textContent = match[0];
-        frag.appendChild(span);
-        lastIndex = match.index + match[0].length;
-        // Prevent infinite loop for zero-length matches
-        if (match.index === regex.lastIndex) regex.lastIndex++;
-      }
-      // Add remaining text
-      if (found) {
-        frag.appendChild(document.createTextNode(text.slice(lastIndex)));
-        node.replaceWith(frag);
-      }
-      return found;
-    } else if (node.nodeType === 1 && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
-      let found = false;
-      node.childNodes.forEach(child => {
-        if (highlightText(child, regex)) found = true;
-      });
-      return found;
-    }
-    return false;
-  }
-
-  all.forEach(el => {
-    removeHighlights(el);
-    if (!term) {
-      el.style.display = '';
-      return;
-    }
-    // Only highlight if term is not empty and not just spaces
-    const safeTerm = term.trim();
-    if (!safeTerm) {
-      el.style.display = '';
-      return;
-    }
-    const regex = new RegExp(safeTerm.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'), 'gi');
-    let found = highlightText(el, regex);
-    el.style.display = found ? '' : 'none';
+  // First, remove all existing highlights to handle backspace/deletions
+  const existingHighlights = viewer.querySelectorAll('span.highlight');
+  existingHighlights.forEach(span => {
+    span.replaceWith(document.createTextNode(span.textContent));
   });
+  // Normalize text nodes that might have been split
+  viewer.normalize();
+
+  const safeTerm = term.trim();
+  if (!safeTerm) {
+    return; // Do nothing if search term is empty
+  }
+  
+  const regex = new RegExp(safeTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+
+  function highlightText(node) {
+    if (node.nodeType === 3) { // Text node
+      const match = node.data.match(regex);
+      if (match) {
+        const parts = node.data.split(regex);
+        const frag = document.createDocumentFragment();
+
+        for (let i = 0; i < parts.length; i++) {
+            frag.appendChild(document.createTextNode(parts[i]));
+            if (i < parts.length - 1) {
+                const highlighted = document.createElement('span');
+                highlighted.className = 'highlight';
+                highlighted.textContent = match[i];
+                frag.appendChild(highlighted);
+            }
+        }
+        node.parentNode.replaceChild(frag, node);
+      }
+    } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName) && node.className !== 'highlight') {
+      // Recurse into child nodes
+      Array.from(node.childNodes).forEach(highlightText);
+    }
+  }
+
+  highlightText(viewer);
 }
 </script>
 
