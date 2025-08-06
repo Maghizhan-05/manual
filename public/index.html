@@ -78,7 +78,11 @@
             <li><a href="#">Debt <span class="arrow">▶</span></a>
                 <ul class="dropdown-menu submenu">
                     <li><a href="#">Requisition</a></li>
-                    <li><a href="#">Call Deposit <span class="arrow">▶</span></a><ul><li><a href="#">direct deal</a></li></ul></li>
+                    <li><a href="#">Call Deposit <span class="arrow">▶</span></a>
+                        <ul class="dropdown-menu submenu">
+                           <li><a href="#">direct deal</a></li>
+                        </ul>
+                    </li>
                     <li><a href="#">Placement and Confirmation</a></li>
                     <li><a href="#">Mid Office</a></li>
                     <li><a href="#">Accounting</a></li>
@@ -96,7 +100,7 @@
                     <li><a href="#">Allotment</a></li>
                 </ul>
             </li>
-            <li><a href="#">Inter Fund Transfer</a>
+            <li><a href="#">Inter Fund Transfer <span class="arrow">▶</span></a>
                 <ul class="dropdown-menu submenu">
                     <li><a href="#">Deal</a></li>
                     <li><a href="#">Accounting</a></li>
@@ -111,7 +115,7 @@
                     <li><a href="#">Allotment</a></li>
                 </ul>
             </li>
-            <li><a href="#">Common</a>
+            <li><a href="#">Common <span class="arrow">▶</span></a>
                 <ul class="dropdown-menu submenu">
                     <li><a href="#">Price Threshold Equity</a></li>
                     <li><a href="#">Price Threshold Debt</a></li>
@@ -266,10 +270,11 @@
             <li><a href="#">Inter Bank Transfer</a></li>
             <li><a href="#">Bulk Authorisation</a></li>
             <li><a href="#">Bulk Deletion</a></li>
-            <li><a href="#" onclick="loadTopicSections(this)">Income Distribution <span class="arrow">▶</span></a>
+            <li><a href="#">Income Distribution <span class="arrow">▶</span></a>
                  <ul class="dropdown-menu submenu">
                     <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Calendar</a></li>
                     <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Scheduler</a></li>
+                    <li><a href="#" onclick="loadTopicSections(this)">Income Distribution Authorisation</a></li>
                  </ul>
             </li>
             <li><a href="#" onclick="loadTopicSections(this)">Security Block</a></li>
@@ -299,11 +304,12 @@
             <li><a href="#">EOD</a></li>
             <li><a href="#">Setup <span class="arrow">▶</span></a>
                 <ul class="dropdown-menu submenu">
-                    <li><a href="#">Market Price Update (Manual)</a></li>
-                    <li><a href="#">Exchange Rate</a></li>
-                    <li><a href="#">Transaction Type</a></li>
+                    <li><a href="#">ledger hiearchy</a></li>
                 </ul>
             </li>
+            <li><a href="#">Market Price Upload(Manual)</a></li>
+            <li><a href="#">Exchange Rate</a></li>
+            <li><a href="#">Transaction Type</a></li>
         </ul>
     </li>
     <li>
@@ -348,7 +354,114 @@
 </footer>
 
 
-<script src="script.js"></script>
+<script>
+    const docFiles = [
+  '/docs/operations/creation.docx',
+  '/docs/operations/income_distribution.docx',
+  '/docs/reports/admin.docx',
+  '/docs/settlement/eod.docx'
+];
+
+function loadTopicSections(el) {
+  // BUG FIX: Clean the topic string more robustly to handle different types of whitespace.
+  const topic = el.textContent.replace(/▶/g, '').replace(/\s+/g, ' ').trim();
+  document.getElementById('searchBox').value = '';
+  document.getElementById('viewer').innerHTML = `<p>⏳ Searching documents for "<b>${topic}</b>"...</p>`;
+
+  const loadPromises = docFiles.map(file =>
+    fetch(file)
+      .then(res => res.arrayBuffer())
+      .then(buffer => mammoth.convertToHtml({ arrayBuffer: buffer }))
+      .then(result => ({ file, html: result.value }))
+      .catch(() => ({ file, html: '' }))
+  );
+
+  Promise.all(loadPromises).then(results => {
+    let allMatches = '';
+
+    results.forEach(({ file, html }) => {
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+
+      const nodes = Array.from(temp.children);
+      let found = false;
+      let section = '';
+      let title = '';
+
+      nodes.forEach((node, i) => {
+        // BUG FIX: Also clean the text from the document node for a reliable comparison.
+        const text = node.innerText?.replace(/\s+/g, ' ').trim().toLowerCase();
+
+        if (text && text === topic.toLowerCase()) {
+          found = true;
+          title = node.innerText;
+          section = `<h2>${title}</h2>`;
+          for (let j = i + 1; j < nodes.length; j++) {
+            if (nodes[j].tagName.startsWith('H') && nodes[j].innerText.trim() !== '') break;
+            section += nodes[j].outerHTML;
+          }
+        }
+      });
+
+      if (found) {
+        allMatches += `<div class="section-block" style="margin-bottom:40px;">
+          <h3 style="color:#444;">📄 From: ${file}</h3>
+          ${section}
+        </div>`;
+      }
+    });
+
+    document.getElementById('viewer').innerHTML =
+      allMatches || `<p style='color:red;'>❌ No matches found for "<b>${topic}</b>".</p>`;
+  });
+}
+
+function filterSections() {
+  const term = document.getElementById('searchBox').value;
+  const viewer = document.getElementById('viewer');
+
+  // First, remove all existing highlights to handle backspace/deletions
+  const existingHighlights = viewer.querySelectorAll('span.highlight');
+  existingHighlights.forEach(span => {
+    span.replaceWith(document.createTextNode(span.textContent));
+  });
+  // Normalize text nodes that might have been split
+  viewer.normalize();
+
+  const safeTerm = term.trim();
+  if (!safeTerm) {
+    return; // Do nothing if search term is empty
+  }
+  
+  const regex = new RegExp(safeTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+
+  function highlightText(node) {
+    if (node.nodeType === 3) { // Text node
+      const match = node.data.match(regex);
+      if (match) {
+        const parts = node.data.split(regex);
+        const frag = document.createDocumentFragment();
+
+        for (let i = 0; i < parts.length; i++) {
+            frag.appendChild(document.createTextNode(parts[i]));
+            if (i < parts.length - 1) {
+                const highlighted = document.createElement('span');
+                highlighted.className = 'highlight';
+                highlighted.textContent = match[i];
+                frag.appendChild(highlighted);
+            }
+        }
+        node.parentNode.replaceChild(frag, node);
+      }
+    } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName) && node.className !== 'highlight') {
+      // Recurse into child nodes
+      Array.from(node.childNodes).forEach(highlightText);
+    }
+  }
+
+  highlightText(viewer);
+}
+</script>
 
 </body>
 </html>
