@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>MFUND Manual Viewer</title>
   <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
-  <style src="styles.css"></style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -32,13 +32,26 @@
             <li><a href="#">Todays Deal</a></li>
             <li><a href="#">Index vs Portfolio Weightage</a></li>
             <li><a href="#">Firm Dashboard <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Aggregated Holdings</a></li></ul>
             </li>
             <li><a href="#">Compliance Enquiry <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Limit Exposure</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Limit Position</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Limit Movement Details</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Limit Movement History</a></li></ul>
             </li>
             <li><a href="#">Enquiries <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Accounting Entries</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Project Accounting Entries</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Account Balances</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Currency Exposure</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Country Exposure</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Company/Issuer Exposure</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Management Group Exposure</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Position By Security</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Sector Exposure</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Industry Exposure</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Transaction Audit Log</a></li></ul>
             </li>
             <li><a href="#">Dynamic Dashboard</a></li>
         </ul>
@@ -47,24 +60,65 @@
         <a href="#">Dealing</a>
         <ul class="dropdown-menu">
             <li><a href="#">Equity <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Requisition</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Placement Dealer Execution</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Dealer Confirmation</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Mid Office</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Accounting</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Portfolio Simulation</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Requisition Upload</a></li></ul>
             </li>
             <li><a href="#">Debt <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Requisition</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Call Deposit <span class="arrow">▶</span></a></li>
+                    <ul class="dropdown-menu submenu"><li><a href="#">direct deal</a></li></ul>
+                </ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Placement and Confirmation</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Mid Office</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Accounting</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Operations</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Call/Put Exercise</a></li></ul>
             </li>
             <li><a href="#">Primary Market <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Application</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Mid Office</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Dealer Confirmation</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Accounting</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Operation</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Allotment</a></li></ul>
             </li>
-            <li><a href="#">Inter Fund Transfer</a></li>
+            <li><a href="#">Inter Fund Transfer</a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Deal</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Accounting</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Operations</a></li></ul>
+            </li>
             <li><a href="#">Mutual Fund Units <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Deal</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Mid Office</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Accounting</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Allotment</a></li></ul>
             </li>
-            <li><a href="#">Common</a></li>
+            <li><a href="#">Common</a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Price Threshold Equity</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Price Threshold Debt</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Rejected/Deleted/Expired/Past Deals</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Rejected/Deleted/Expired/Past Requisition</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Approve Reject Reason</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Invest Reason</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Transaction Type Mapping</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Requisition Valid Days</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Additional Invest Reason</a></li></ul>
+            </li>
             <li><a href="#">Fixed Deposit <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Direct Deal</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Mid Office</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Fixed Deposit Operations</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Fixed Deposit Withdrawal</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Accounting</a></li></ul>
             </li>
             <li><a href="#">Trade Download <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">TradeDownload</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">TradeUpdate</a></li></ul>
             </li>
         </ul>
     </li>
@@ -72,7 +126,9 @@
         <a href="#">Analytics</a>
         <ul class="dropdown-menu">
             <li><a href="#">Model Rebalancer <span class="arrow">▶</span></a>
-                <ul class="dropdown-menu submenu"><li><a href="#">(Sub-menu items)</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Model Creation/Maintenance</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Model Scheme Link</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Model Rebalance Process</a></li></ul>
             </li>
             <li><a href="#">Applicable Yield</a></li>
         </ul>
@@ -80,19 +136,75 @@
     <li>
         <a href="#">Setup</a>
         <ul class="dropdown-menu">
-            <li><a href="#">Fund Info <span class="arrow">▶</span></a></li>
-            <li><a href="#">Security Info <span class="arrow">▶</span></a></li>
-            <li><a href="#">Party Info <span class="arrow">▶</span></a></li>
-            <li><a href="#">Fees & Charges <span class="arrow">▶</span></a></li>
-            <li><a href="#">Exchange Info <span class="arrow">▶</span></a></li>
-            <li><a href="#">Workflow <span class="arrow">▶</span></a></li>
-            <li><a href="#" onclick="loadTopicSections(this)">User Setup & Access <span class="arrow">▶</span></a></li>
-            <li><a href="#">Country-Exch <span class="arrow">▶</span></a></li>
-            <li><a href="#">Task Scheduler <span class="arrow">▶</span></a></li>
+            <li><a href="#">Fund Info <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Fund/Portfolio Master</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Fund/Portfolio Group</a></li></ul>
+            </li>
+            <li><a href="#">Security Info <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Assest Type</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Company / Issuer</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Industry/Sector</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Security-Non Equity</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Redemption Schedule</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Security-Equity</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Derivatives Maturity Date</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">MFU Instrument</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Interest Key</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Interest Key Rates</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Interest Rate Change</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Management Group</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Investment Type</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Issue Type</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Partially Paid Up Debenture</a></li></ul>
+            </li>
+            <li><a href="#">Party Info <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Broker</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Party Master</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Custodian Master</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Default Account and Custodian Mapping</a></li></ul>
+            </li>
+            <li><a href="#">Fees & Charges <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Charge Type</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Fee Definition</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Party Charge Definition</a></li></ul>
+            </li>
+            <li><a href="#">Exchange Info <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Indices/Benchmarks</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Stock Exchange</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Holiday Maintenance</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Fund Stock Exchange</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">External Code Mapping</a></li></ul>
+            </li>
+            <li><a href="#">Workflow <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Definition</a></li></ul>
+            </li>
+            <li><a href="#">User Setup & Access <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">User Master</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Role and Access Permission</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Access Master</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">User Unlock and Reset Password</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Reset User Status</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Alerts Setup</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Officiate User</a></li></ul>
+            </li>
+            <li><a href="#">Country-Exch <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Country</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Currency</a></li></ul>
+            </li>
+            <li><a href="#">Task Scheduler <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Task Scheduler</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Task Status</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Recipient Master</a></li></ul>
+            </li>
             <li><a href="#">Expense Master <span class="arrow">▶</span></a></li>
             <li><a href="#">Common Field Master</a></li>
             <li><a href="#">Custom Field Setup</a></li>
-            <li><a href="#">Compliance <span class="arrow">▶</span></a></li>
+            <li><a href="#">Compliance <span class="arrow">▶</span></a>
+                <ul class="dropdown-menu submenu"><li><a href="#">Limit Setup</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">User Defined Set</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Transaction Time Limit</a></li></ul>
+                <ul class="dropdown-menu submenu"><li><a href="#">Limit Breach Monitoring</a></li></ul>
+            </li>
             <li><a href="#">System Information</a></li>
             <li><a href="#">Configuration setup</a></li>
             <li><a href="#">Deal Status Widget setup</a></li>
