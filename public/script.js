@@ -15,7 +15,7 @@ function loadTopicSections(el) {
   document.getElementById('searchBox').value = '';
   document.getElementById('viewer').innerHTML = `<p>⏳ Searching documents for "<b>${topic}</b>"...</p>`;
 
-  // --- NEW: QUICK LINKS LOGIC ---
+  // --- QUICK LINKS LOGIC ---
   const quickLinksContainer = document.getElementById('quickLinksContainer');
   const quickLinksList = document.getElementById('quickLinksList');
   quickLinksList.innerHTML = ''; // Clear previous links
@@ -103,45 +103,76 @@ function loadTopicSections(el) {
   });
 }
 
+
+// --- DEBUGGED & REWRITTEN FUNCTION ---
 function filterSections() {
-  const term = document.getElementById('searchBox').value;
-  const viewer = document.getElementById('viewer');
+    const term = document.getElementById('searchBox').value;
+    const viewer = document.getElementById('viewer');
 
-  const existingHighlights = viewer.querySelectorAll('span.highlight');
-  existingHighlights.forEach(span => {
-    span.replaceWith(document.createTextNode(span.textContent));
-  });
-  viewer.normalize();
+    // First, remove all existing highlights to handle backspace/deletions.
+    const existingHighlights = viewer.querySelectorAll('span.highlight');
+    existingHighlights.forEach(span => {
+        // Replace the span with its own text content
+        span.replaceWith(document.createTextNode(span.textContent));
+    });
+    // Normalize the viewer to merge adjacent text nodes. This is crucial.
+    viewer.normalize();
 
-  const safeTerm = term.trim();
-  if (!safeTerm) {
-    return;
-  }
-  
-  const regex = new RegExp(safeTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-
-  function highlightText(node) {
-    if (node.nodeType === 3) { // Text node
-      const match = node.data.match(regex);
-      if (match) {
-        const parts = node.data.split(regex);
-        const frag = document.createDocumentFragment();
-
-        for (let i = 0; i < parts.length; i++) {
-            frag.appendChild(document.createTextNode(parts[i]));
-            if (i < parts.length - 1) {
-                const highlighted = document.createElement('span');
-                highlighted.className = 'highlight';
-                highlighted.textContent = match[i];
-                frag.appendChild(highlighted);
-            }
-        }
-        node.parentNode.replaceChild(frag, node);
-      }
-    } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName) && node.className !== 'highlight') {
-      Array.from(node.childNodes).forEach(highlightText);
+    const safeTerm = term.trim();
+    if (!safeTerm) {
+        // If the search term is empty, show all sections
+        viewer.querySelectorAll('.section-block').forEach(el => el.style.display = '');
+        return;
     }
-  }
 
-  highlightText(viewer);
+    const regex = new RegExp(safeTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+
+    // Recursive function to apply highlighting to all text nodes within an element
+    function highlightInNode(node) {
+        let foundMatch = false;
+        if (node.nodeType === 3) { // It's a text node
+            const text = node.textContent;
+            const frag = document.createDocumentFragment();
+            let lastIndex = 0;
+            let match;
+
+            regex.lastIndex = 0; // Reset regex state
+
+            while ((match = regex.exec(text)) !== null) {
+                foundMatch = true;
+                // Add the text before the match
+                frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+
+                // Create and add the highlighted span
+                const span = document.createElement('span');
+                span.className = 'highlight';
+                span.textContent = match[0];
+                frag.appendChild(span);
+
+                lastIndex = regex.lastIndex;
+            }
+
+            if (foundMatch) {
+                // Add the remaining text after the last match
+                frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+                // Replace the original text node with the new fragment
+                node.replaceWith(frag);
+            }
+        } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
+            // It's an element node, so recurse into its children.
+            // We use Array.from to create a static copy as the list will be modified.
+            Array.from(node.childNodes).forEach(child => {
+                if (highlightInNode(child)) {
+                    foundMatch = true;
+                }
+            });
+        }
+        return foundMatch;
+    }
+
+    // Apply highlighting and hide/show the main section blocks
+    viewer.querySelectorAll('.section-block').forEach(section => {
+        const hasMatch = highlightInNode(section);
+        section.style.display = hasMatch ? '' : 'none';
+    });
 }
