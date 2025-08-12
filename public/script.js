@@ -3,7 +3,8 @@ const docFiles = [
   '/docs/operations/income_distribution.docx',
   '/docs/reports/admin.docx',
   '/docs/settlement/eod.docx',
-  '/docs/settelement/UTT- MFundPlus Implementation- FSD02- User Admin Masters (1) (1).docx'
+  '/docs/settelement/UTT- MFundPlus Implementation- FSD02- User Admin Masters (1) (1).docx',
+  '/docs/operations/excel_word.docx'
 ];
 
 /**
