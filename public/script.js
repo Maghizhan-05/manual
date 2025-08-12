@@ -23,14 +23,18 @@ async function processAndRenderExcelLinks(htmlString, docxPath) {
 
     for (const link of links) {
         const linkText = link.textContent || '';
-        if (link.href.toLowerCase().endsWith('.xlsx') || linkText.toLowerCase().endsWith('.xlsx')) {
-            const excelUrl = new URL(link.href, window.location.origin + docDirectory).href;
+        // Check if the link's text content is a filename ending in .xlsx
+        if (linkText.toLowerCase().endsWith('.xlsx')) {
+            // Construct a simple relative path
+            const excelUrl = docDirectory + linkText;
 
             try {
                 const response = await fetch(excelUrl);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} for ${excelUrl}`);
+                }
                 const arrayBuffer = await response.arrayBuffer();
+                
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
@@ -42,13 +46,14 @@ async function processAndRenderExcelLinks(htmlString, docxPath) {
                     <h4>Rendered Excel File: ${linkText}</h4>
                     ${tableHtml}`;
                 
-                if(link.parentNode) {
-                   link.parentNode.replaceWith(tableContainer);
-                }
+                // Replace the link's parent paragraph (or the link itself if no parent) with the table
+                const elementToReplace = link.closest('p') || link;
+                elementToReplace.replaceWith(tableContainer);
 
             } catch (error) {
                 console.error(`Failed to fetch and render Excel file: ${excelUrl}`, error);
                 link.style.color = 'red';
+                link.style.textDecoration = 'none';
                 link.textContent += ' (Error: File not found or failed to parse)';
             }
         }
@@ -56,6 +61,7 @@ async function processAndRenderExcelLinks(htmlString, docxPath) {
     
     return doc.body.innerHTML;
 }
+
 
 function loadTopicSections(el) {
   if (event) {
@@ -104,10 +110,11 @@ function loadTopicSections(el) {
       .then(res => res.arrayBuffer())
       .then(async (buffer) => {
         const mammothResult = await mammoth.convertToHtml({ arrayBuffer: buffer });
+        // Post-process the generated HTML to find and render excel links
         const finalHtml = await processAndRenderExcelLinks(mammothResult.value, file);
         return { file, html: finalHtml };
       })
-      .catch(() => ({ file, html: '' }))
+      .catch((err) => ({ file, html: `<p style="color:red">Error loading ${file}: ${err.message}</p>` }))
   );
 
   Promise.all(loadPromises).then(results => {
@@ -121,10 +128,11 @@ function loadTopicSections(el) {
       let title = '';
 
       nodes.forEach((node, i) => {
+        // Use innerText which is more render-aware than textContent
         const text = node.innerText?.replace(/\s+/g, ' ').trim().toLowerCase();
         if (text && text === topic.toLowerCase()) {
           found = true;
-          title = node.innerText;
+          title = node.innerHTML; // Keep original formatting for the title
           section = `<h2>${title}</h2>`;
           for (let j = i + 1; j < nodes.length; j++) {
             if (nodes[j].tagName.startsWith('H') && nodes[j].innerText.trim() !== '') break;
@@ -166,7 +174,7 @@ function filterSections() {
 
     function highlightInNode(node) {
         let foundMatch = false;
-        if (node.nodeType === 3) {
+        if (node.nodeType === 3) { // It's a text node
             const text = node.textContent;
             const frag = document.createDocumentFragment();
             let lastIndex = 0;
