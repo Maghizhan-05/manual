@@ -61,61 +61,62 @@ async function loadTopic(topic, updateUrl = true) {
         history.pushState({ topic: topic }, '', newUrl);
     }
     
-    // Pre-load all documents to search for the topic
-    const allDocData = await Promise.all(
-        docFiles.map(file =>
-            mammoth.convertToHtml({ path: file })
-                .then(result => ({ file, html: result.value }))
-                .catch(() => ({ file, html: '' }))
-        )
-    );
-
     let allMatchesHtml = '';
-    for (const { file, html } of allDocData) {
-        const temp = document.createElement('div');
-        temp.innerHTML = html;
-        const nodes = Array.from(temp.children);
-        
-        for (let i = 0; i < nodes.length; i++) {
-            const node = nodes[i];
-            const text = node.innerText?.replace(/\s+/g, ' ').trim().toLowerCase();
-            if (text && text === topic.toLowerCase()) {
-                let sectionHtml = `<h2>${node.innerHTML}</h2>`;
-                for (let j = i + 1; j < nodes.length; j++) {
-                    if (nodes[j].tagName.startsWith('H') && nodes[j].innerText.trim() !== '') break;
-                    sectionHtml += nodes[j].outerHTML;
+    for (const file of docFiles) {
+        try {
+            const response = await fetch(file);
+            if (!response.ok) continue; // Skip if document not found
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const { value: html } = await mammoth.convertToHtml({ arrayBuffer });
+
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            const nodes = Array.from(temp.children);
+
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
+                const text = node.innerText?.replace(/\s+/g, ' ').trim().toLowerCase();
+
+                if (text && text === topic.toLowerCase()) {
+                    let sectionHtml = `<h2>${node.innerHTML}</h2>`;
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        if (nodes[j].tagName.startsWith('H') && nodes[j].innerText.trim() !== '') break;
+                        sectionHtml += nodes[j].outerHTML;
+                    }
+                    
+                    // Found a section, now process it for Excel links
+                    const sectionContainer = document.createElement('div');
+                    sectionContainer.innerHTML = sectionHtml;
+                    await renderExcelLinksInSection(sectionContainer, file);
+                    
+                    allMatchesHtml += `<div class="section-block" style="margin-bottom:40px;">
+                        <h3 style="color:#444;">📄 From: ${file}</h3>
+                        ${sectionContainer.innerHTML}
+                    </div>`;
                 }
-                
-                allMatchesHtml += `<div class="section-block" data-doc-path="${file}">${sectionHtml}</div>`;
             }
+        } catch (error) {
+            console.error(`Error loading or processing document ${file}:`, error);
         }
     }
     
-    const finalContainer = document.createElement('div');
-    finalContainer.innerHTML = allMatchesHtml || `<p style='color:red;'>❌ No matches found for "<b>${topic}</b>".</p>`;
-    
-    // Process Excel links only in the matched sections
-    const sections = finalContainer.querySelectorAll('.section-block');
-    for(const section of sections) {
-        const docPath = section.getAttribute('data-doc-path');
-        await renderExcelLinksInSection(section, docPath);
-    }
-
-    viewer.innerHTML = `<div class="section-block-wrapper">${finalContainer.innerHTML}</div>`;
+    viewer.innerHTML = allMatchesHtml || `<p style='color:red;'>❌ No matches found for "<b>${topic}</b>".</p>`;
 }
 
 function loadTopicSections(el) {
-    if (event) {
-        event.preventDefault();
-    }
+    if (event) event.preventDefault();
     const topic = el.textContent.replace(/▶/g, '').replace(/\s+/g, ' ').trim();
     loadTopic(topic);
+    updateQuickLinks(el, topic);
+}
 
-    // Update Quick Links
+function updateQuickLinks(el, topic) {
     const quickLinksContainer = document.getElementById('quickLinksContainer');
     const quickLinksList = document.getElementById('quickLinksList');
     quickLinksList.innerHTML = '';
     const parentList = el.closest('ul');
+
     if (parentList) {
         const siblingLinks = parentList.querySelectorAll('a');
         if (siblingLinks.length > 1) {
@@ -123,12 +124,13 @@ function loadTopicSections(el) {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
                 a.href = '#';
-                a.textContent = link.firstChild.textContent.trim();
+                const linkTopic = link.firstChild.textContent.trim();
+                a.textContent = linkTopic;
                 a.onclick = (e) => {
                     e.preventDefault();
                     loadTopicSections(link);
                 };
-                if (link.firstChild.textContent.trim() === topic) {
+                if (linkTopic === topic) {
                     a.classList.add('active-quick-link');
                 }
                 li.appendChild(a);
@@ -143,14 +145,13 @@ function loadTopicSections(el) {
     }
 }
 
-// Handle browser back/forward navigation
+// Handle browser back/forward and initial load
 window.addEventListener('popstate', (event) => {
     if (event.state && event.state.topic) {
         loadTopic(event.state.topic, false);
     }
 });
 
-// Load content based on URL on initial page load
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const topic = params.get('topic');
@@ -160,55 +161,49 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function filterSections() {
-    const term = document.getElementById('searchBox').value;
+    const term = document.getElementById('searchBox').value.trim();
     const viewer = document.getElementById('viewer');
-    const safeTerm = term.trim();
 
-    // Clear previous highlights
-    const existingHighlights = viewer.querySelectorAll('span.highlight');
-    existingHighlights.forEach(span => {
-        span.replaceWith(document.createTextNode(span.textContent));
-    });
+    const highlights = viewer.querySelectorAll('span.highlight');
+    highlights.forEach(span => span.replaceWith(document.createTextNode(span.textContent)));
     viewer.normalize();
 
-    if (!safeTerm) {
-        viewer.querySelectorAll('.section-block-wrapper > div').forEach(el => el.style.display = '');
+    if (!term) {
+        viewer.querySelectorAll('.section-block').forEach(el => el.style.display = '');
         return;
     }
 
-    const regex = new RegExp(safeTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-
-    function highlightInNode(node) {
-        let foundMatch = false;
-        if (node.nodeType === 3) {
-            const text = node.textContent;
-            const frag = document.createDocumentFragment();
-            let lastIndex = 0;
-            let match;
-            regex.lastIndex = 0;
-            while ((match = regex.exec(text)) !== null) {
-                foundMatch = true;
-                frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
-                const span = document.createElement('span');
-                span.className = 'highlight';
-                span.textContent = match[0];
-                frag.appendChild(span);
-                lastIndex = regex.lastIndex;
-            }
-            if (foundMatch) {
-                frag.appendChild(document.createTextNode(text.slice(lastIndex)));
-                node.replaceWith(frag);
-            }
-        } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
-            Array.from(node.childNodes).forEach(child => {
-                if (highlightInNode(child)) foundMatch = true;
-            });
-        }
-        return foundMatch;
-    }
-
-    viewer.querySelectorAll('.section-block-wrapper > div').forEach(section => {
-        const hasMatch = highlightInNode(section);
+    const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    
+    viewer.querySelectorAll('.section-block').forEach(section => {
+        const hasMatch = highlightInNode(section, regex);
         section.style.display = hasMatch ? '' : 'none';
     });
+}
+
+function highlightInNode(node, regex) {
+    let foundMatch = false;
+    if (node.nodeType === 3) {
+        const text = node.textContent;
+        if (text.match(regex)) {
+            foundMatch = true;
+            const frag = document.createDocumentFragment();
+            let lastIndex = 0;
+            text.replace(regex, (match, offset) => {
+                frag.appendChild(document.createTextNode(text.slice(lastIndex, offset)));
+                const span = document.createElement('span');
+                span.className = 'highlight';
+                span.textContent = match;
+                frag.appendChild(span);
+                lastIndex = offset + match.length;
+            });
+            frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+            node.replaceWith(frag);
+        }
+    } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
+        Array.from(node.childNodes).forEach(child => {
+            if (highlightInNode(child, regex)) foundMatch = true;
+        });
+    }
+    return foundMatch;
 }
