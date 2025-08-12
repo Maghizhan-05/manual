@@ -52,9 +52,9 @@ async function processAndRenderExcelLinks(htmlString, docxPath) {
 
             } catch (error) {
                 console.error(`Failed to fetch and render Excel file: ${excelUrl}`, error);
-                link.style.color = 'red';
+                link.style.color = 'blue';
                 link.style.textDecoration = 'none';
-                link.textContent += ' (Error: File not found or failed to parse)';
+                link.textContent += ' <- Click to view ';
             }
         }
     }
