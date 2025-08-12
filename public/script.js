@@ -8,45 +8,56 @@ const docFiles = [
 ];
 
 /**
- * Creates links for embedded Excel files from a .docx file buffer.
- * @param {ArrayBuffer} arrayBuffer - The buffer of the .docx file.
- * @returns {Promise<string>} A promise that resolves to an HTML string of links.
+ * Finds hyperlinks to .xlsx files in an HTML string, fetches them, converts
+ * them to HTML tables, and replaces the original link.
+ * @param {string} htmlString - The initial HTML content from mammoth.
+ * @param {string} docxPath - The path of the source .docx file.
+ * @returns {Promise<string>} A promise that resolves to the modified HTML string.
  */
-async function createExcelLinks(arrayBuffer) {
-    let linksHtml = '';
-    try {
-        const zip = await JSZip.loadAsync(arrayBuffer);
-        const excelLinkPromises = [];
+async function processAndRenderExcelLinks(htmlString, docxPath) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    const links = Array.from(doc.querySelectorAll('a'));
+    
+    const docDirectory = docxPath.substring(0, docxPath.lastIndexOf('/') + 1);
 
-        zip.forEach((relativePath, file) => {
-            if (relativePath.startsWith('word/embeddings/') && relativePath.endsWith('.xlsx')) {
-                excelLinkPromises.push(
-                    file.async('blob').then(blob => {
-                        const url = URL.createObjectURL(blob);
-                        const fileName = relativePath.split('/').pop();
-                        // Create an anchor tag that opens in a new tab
-                        return `
-                            <p>
-                                <strong>📄 Embedded Excel File:</strong> 
-                                <a href="${url}" target="_blank" rel="noopener noreferrer">${fileName}</a>
-                            </p>`;
-                    })
-                );
+    for (const link of links) {
+        const linkText = link.textContent || '';
+        if (link.href.toLowerCase().endsWith('.xlsx') || linkText.toLowerCase().endsWith('.xlsx')) {
+            const excelUrl = new URL(link.href, window.location.origin + docDirectory).href;
+
+            try {
+                const response = await fetch(excelUrl);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const tableHtml = XLSX.utils.sheet_to_html(worksheet);
+                
+                const tableContainer = doc.createElement('div');
+                tableContainer.className = 'rendered-excel-table';
+                tableContainer.innerHTML = `
+                    <h4>Rendered Excel File: ${linkText}</h4>
+                    ${tableHtml}`;
+                
+                if(link.parentNode) {
+                   link.parentNode.replaceWith(tableContainer);
+                }
+
+            } catch (error) {
+                console.error(`Failed to fetch and render Excel file: ${excelUrl}`, error);
+                link.style.color = 'red';
+                link.textContent += ' (Error: File not found or failed to parse)';
             }
-        });
-
-        const allLinks = await Promise.all(excelLinkPromises);
-        linksHtml = allLinks.join('');
-
-    } catch (e) {
-        console.error("Error processing docx for embedded file links:", e);
+        }
     }
-    return linksHtml;
+    
+    return doc.body.innerHTML;
 }
 
-
 function loadTopicSections(el) {
-  // Prevent default link behavior
   if (event) {
     event.preventDefault();
   }
@@ -55,32 +66,28 @@ function loadTopicSections(el) {
   document.getElementById('searchBox').value = '';
   document.getElementById('viewer').innerHTML = `<p>⏳ Searching documents for "<b>${topic}</b>"...</p>`;
 
-  // --- QUICK LINKS LOGIC ---
+  // Quick Links Logic
   const quickLinksContainer = document.getElementById('quickLinksContainer');
   const quickLinksList = document.getElementById('quickLinksList');
-  quickLinksList.innerHTML = ''; // Clear previous links
+  quickLinksList.innerHTML = '';
 
-  const parentList = el.closest('ul'); // Find the submenu the clicked item belongs to
+  const parentList = el.closest('ul');
 
   if (parentList) {
     const siblingLinks = parentList.querySelectorAll('a');
-
     if (siblingLinks.length > 1) {
       siblingLinks.forEach(link => {
         const li = document.createElement('li');
         const a = document.createElement('a');
-        
         a.href = '#';
         a.textContent = link.firstChild.textContent.trim();
         a.onclick = (e) => {
             e.preventDefault();
             loadTopicSections(link);
         };
-
         if (link.firstChild.textContent.trim() === el.firstChild.textContent.trim()) {
             a.classList.add('active-quick-link');
         }
-
         li.appendChild(a);
         quickLinksList.appendChild(li);
       });
@@ -91,32 +98,23 @@ function loadTopicSections(el) {
   } else {
     quickLinksContainer.style.display = 'none';
   }
-  // --- END OF QUICK LINKS LOGIC ---
 
   const loadPromises = docFiles.map(file =>
     fetch(file)
       .then(res => res.arrayBuffer())
       .then(async (buffer) => {
         const mammothResult = await mammoth.convertToHtml({ arrayBuffer: buffer });
-        // Create links that open in a new tab
-        const excelLinks = await createExcelLinks(buffer);
-
-        return {
-          file,
-          html: mammothResult.value,
-          excelLinks: excelLinks
-        };
+        const finalHtml = await processAndRenderExcelLinks(mammothResult.value, file);
+        return { file, html: finalHtml };
       })
-      .catch(() => ({ file, html: '', excelLinks: '' }))
+      .catch(() => ({ file, html: '' }))
   );
 
   Promise.all(loadPromises).then(results => {
     let allMatches = '';
-
-    results.forEach(({ file, html, excelLinks }) => {
+    results.forEach(({ file, html }) => {
       const temp = document.createElement('div');
       temp.innerHTML = html;
-
       const nodes = Array.from(temp.children);
       let found = false;
       let section = '';
@@ -136,11 +134,6 @@ function loadTopicSections(el) {
       });
 
       if (found) {
-        // Append the links to the end of the section
-        if (excelLinks) {
-          section += `<div class="embedded-excel-container">${excelLinks}</div>`;
-        }
-        
         allMatches += `<div class="section-block" style="margin-bottom:40px;">
           <h3 style="color:#444;">📄 From: ${file}</h3>
           ${section}
@@ -153,8 +146,6 @@ function loadTopicSections(el) {
   });
 }
 
-
-// --- DEBUGGED & REWRITTEN FUNCTION ---
 function filterSections() {
     const term = document.getElementById('searchBox').value;
     const viewer = document.getElementById('viewer');
@@ -180,21 +171,16 @@ function filterSections() {
             const frag = document.createDocumentFragment();
             let lastIndex = 0;
             let match;
-
             regex.lastIndex = 0;
-
             while ((match = regex.exec(text)) !== null) {
                 foundMatch = true;
                 frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
-
                 const span = document.createElement('span');
                 span.className = 'highlight';
                 span.textContent = match[0];
                 frag.appendChild(span);
-
                 lastIndex = regex.lastIndex;
             }
-
             if (foundMatch) {
                 frag.appendChild(document.createTextNode(text.slice(lastIndex)));
                 node.replaceWith(frag);
