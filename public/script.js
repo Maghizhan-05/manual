@@ -8,10 +8,9 @@ const docFiles = [
 ];
 
 /**
- * Finds hyperlinks to .xlsx files within a specific HTML section, fetches them, 
- * converts them to HTML tables, and replaces the original links.
- * @param {HTMLElement} sectionElement - The HTML element of the section to process.
- * @param {string} docxPath - The path of the source .docx file for resolving relative links.
+ * Finds and renders Excel links within a given HTML element.
+ * @param {HTMLElement} sectionElement The element to search for links.
+ * @param {string} docxPath The base path of the document for resolving relative URLs.
  */
 async function renderExcelLinksInSection(sectionElement, docxPath) {
     const links = Array.from(sectionElement.querySelectorAll('a'));
@@ -24,27 +23,23 @@ async function renderExcelLinksInSection(sectionElement, docxPath) {
 
             try {
                 const response = await fetch(excelUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
                 const arrayBuffer = await response.arrayBuffer();
-                
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 const tableHtml = XLSX.utils.sheet_to_html(worksheet);
-                
+
                 const tableContainer = document.createElement('div');
                 tableContainer.className = 'rendered-excel-table';
-                tableContainer.innerHTML = `
-                    <h4>Rendered Excel File: ${linkText}</h4>
-                    ${tableHtml}`;
+                tableContainer.innerHTML = `<h4>Rendered Excel File: ${linkText}</h4>${tableHtml}`;
                 
                 const elementToReplace = link.closest('p') || link;
                 elementToReplace.replaceWith(tableContainer);
 
             } catch (error) {
-                console.error(`Failed to fetch and render Excel file: ${excelUrl}`, error);
+                console.error(`Failed to process Excel link: ${excelUrl}`, error);
                 link.style.color = 'red';
                 link.textContent += ' (Error: File not found or failed to parse)';
             }
@@ -52,106 +47,132 @@ async function renderExcelLinksInSection(sectionElement, docxPath) {
     }
 }
 
+/**
+ * Loads the content for a specific topic into the viewer.
+ * @param {string} topic The topic to load.
+ * @param {boolean} [updateUrl=true] Whether to push a new state to the browser history.
+ */
+async function loadTopic(topic, updateUrl = true) {
+    const viewer = document.getElementById('viewer');
+    viewer.innerHTML = `<p>⏳ Searching documents for "<b>${topic}</b>"...</p>`;
 
-async function loadTopicSections(el) {
-  if (event) {
-    event.preventDefault();
-  }
-  
-  const topic = el.textContent.replace(/▶/g, '').replace(/\s+/g, ' ').trim();
-  const viewer = document.getElementById('viewer');
-  document.getElementById('searchBox').value = '';
-  viewer.innerHTML = `<p>⏳ Searching documents for "<b>${topic}</b>"...</p>`;
-
-  // Quick Links Logic
-  const quickLinksContainer = document.getElementById('quickLinksContainer');
-  const quickLinksList = document.getElementById('quickLinksList');
-  quickLinksList.innerHTML = '';
-  const parentList = el.closest('ul');
-  if (parentList) {
-    const siblingLinks = parentList.querySelectorAll('a');
-    if (siblingLinks.length > 1) {
-      siblingLinks.forEach(link => {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = '#';
-        a.textContent = link.firstChild.textContent.trim();
-        a.onclick = (e) => {
-            e.preventDefault();
-            loadTopicSections(link);
-        };
-        if (link.firstChild.textContent.trim() === el.firstChild.textContent.trim()) {
-            a.classList.add('active-quick-link');
-        }
-        li.appendChild(a);
-        quickLinksList.appendChild(li);
-      });
-      quickLinksContainer.style.display = 'block';
-    } else {
-      quickLinksContainer.style.display = 'none';
+    if (updateUrl) {
+        const newUrl = `${window.location.pathname}?topic=${encodeURIComponent(topic)}`;
+        history.pushState({ topic: topic }, '', newUrl);
     }
-  } else {
-    quickLinksContainer.style.display = 'none';
-  }
-
-  // First, load all documents into memory
-  const allDocData = await Promise.all(
-    docFiles.map(file => 
-      mammoth.convertToHtml({ path: file })
-        .then(result => ({ file, html: result.value }))
-        .catch(() => ({ file, html: '' }))
-    )
-  );
-
-  let allMatchesHtml = '';
-  // Find the relevant sections from all loaded documents
-  for (const { file, html } of allDocData) {
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
-    const nodes = Array.from(temp.children);
     
-    for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
-        const text = node.innerText?.replace(/\s+/g, ' ').trim().toLowerCase();
+    // Pre-load all documents to search for the topic
+    const allDocData = await Promise.all(
+        docFiles.map(file =>
+            mammoth.convertToHtml({ path: file })
+                .then(result => ({ file, html: result.value }))
+                .catch(() => ({ file, html: '' }))
+        )
+    );
+
+    let allMatchesHtml = '';
+    for (const { file, html } of allDocData) {
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const nodes = Array.from(temp.children);
         
-        if (text && text === topic.toLowerCase()) {
-            let sectionHtml = `<h2>${node.innerHTML}</h2>`;
-            for (let j = i + 1; j < nodes.length; j++) {
-                if (nodes[j].tagName.startsWith('H') && nodes[j].innerText.trim() !== '') break;
-                sectionHtml += nodes[j].outerHTML;
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            const text = node.innerText?.replace(/\s+/g, ' ').trim().toLowerCase();
+            if (text && text === topic.toLowerCase()) {
+                let sectionHtml = `<h2>${node.innerHTML}</h2>`;
+                for (let j = i + 1; j < nodes.length; j++) {
+                    if (nodes[j].tagName.startsWith('H') && nodes[j].innerText.trim() !== '') break;
+                    sectionHtml += nodes[j].outerHTML;
+                }
+                
+                allMatchesHtml += `<div class="section-block" data-doc-path="${file}">${sectionHtml}</div>`;
             }
-            
-            allMatchesHtml += `<div class="section-block" data-doc-path="${file}" style="margin-bottom:40px;">
-                <h3 style="color:#444;">📄 From: ${file}</h3>
-                ${sectionHtml}
-            </div>`;
         }
     }
-  }
+    
+    const finalContainer = document.createElement('div');
+    finalContainer.innerHTML = allMatchesHtml || `<p style='color:red;'>❌ No matches found for "<b>${topic}</b>".</p>`;
+    
+    // Process Excel links only in the matched sections
+    const sections = finalContainer.querySelectorAll('.section-block');
+    for(const section of sections) {
+        const docPath = section.getAttribute('data-doc-path');
+        await renderExcelLinksInSection(section, docPath);
+    }
 
-  viewer.innerHTML = allMatchesHtml || `<p style='color:red;'>❌ No matches found for "<b>${topic}</b>".</p>`;
-  
-  // Now, process the links only in the displayed sections
-  const displayedSections = viewer.querySelectorAll('.section-block');
-  for(const section of displayedSections) {
-      const docPath = section.getAttribute('data-doc-path');
-      await renderExcelLinksInSection(section, docPath);
-  }
+    viewer.innerHTML = `<div class="section-block-wrapper">${finalContainer.innerHTML}</div>`;
 }
+
+function loadTopicSections(el) {
+    if (event) {
+        event.preventDefault();
+    }
+    const topic = el.textContent.replace(/▶/g, '').replace(/\s+/g, ' ').trim();
+    loadTopic(topic);
+
+    // Update Quick Links
+    const quickLinksContainer = document.getElementById('quickLinksContainer');
+    const quickLinksList = document.getElementById('quickLinksList');
+    quickLinksList.innerHTML = '';
+    const parentList = el.closest('ul');
+    if (parentList) {
+        const siblingLinks = parentList.querySelectorAll('a');
+        if (siblingLinks.length > 1) {
+            siblingLinks.forEach(link => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = '#';
+                a.textContent = link.firstChild.textContent.trim();
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    loadTopicSections(link);
+                };
+                if (link.firstChild.textContent.trim() === topic) {
+                    a.classList.add('active-quick-link');
+                }
+                li.appendChild(a);
+                quickLinksList.appendChild(li);
+            });
+            quickLinksContainer.style.display = 'block';
+        } else {
+            quickLinksContainer.style.display = 'none';
+        }
+    } else {
+        quickLinksContainer.style.display = 'none';
+    }
+}
+
+// Handle browser back/forward navigation
+window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.topic) {
+        loadTopic(event.state.topic, false);
+    }
+});
+
+// Load content based on URL on initial page load
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const topic = params.get('topic');
+    if (topic) {
+        loadTopic(topic, false);
+    }
+});
 
 function filterSections() {
     const term = document.getElementById('searchBox').value;
     const viewer = document.getElementById('viewer');
+    const safeTerm = term.trim();
 
+    // Clear previous highlights
     const existingHighlights = viewer.querySelectorAll('span.highlight');
     existingHighlights.forEach(span => {
         span.replaceWith(document.createTextNode(span.textContent));
     });
     viewer.normalize();
 
-    const safeTerm = term.trim();
     if (!safeTerm) {
-        viewer.querySelectorAll('.section-block').forEach(el => el.style.display = '');
+        viewer.querySelectorAll('.section-block-wrapper > div').forEach(el => el.style.display = '');
         return;
     }
 
@@ -180,15 +201,13 @@ function filterSections() {
             }
         } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
             Array.from(node.childNodes).forEach(child => {
-                if (highlightInNode(child)) {
-                    foundMatch = true;
-                }
+                if (highlightInNode(child)) foundMatch = true;
             });
         }
         return foundMatch;
     }
 
-    viewer.querySelectorAll('.section-block').forEach(section => {
+    viewer.querySelectorAll('.section-block-wrapper > div').forEach(section => {
         const hasMatch = highlightInNode(section);
         section.style.display = hasMatch ? '' : 'none';
     });
