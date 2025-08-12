@@ -6,6 +6,44 @@ const docFiles = [
   '/docs/settelement/UTT- MFundPlus Implementation- FSD02- User Admin Masters (1) (1).docx'
 ];
 
+/**
+ * Creates links for embedded Excel files from a .docx file buffer.
+ * @param {ArrayBuffer} arrayBuffer - The buffer of the .docx file.
+ * @returns {Promise<string>} A promise that resolves to an HTML string of links.
+ */
+async function createExcelLinks(arrayBuffer) {
+    let linksHtml = '';
+    try {
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        const excelLinkPromises = [];
+
+        zip.forEach((relativePath, file) => {
+            if (relativePath.startsWith('word/embeddings/') && relativePath.endsWith('.xlsx')) {
+                excelLinkPromises.push(
+                    file.async('blob').then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const fileName = relativePath.split('/').pop();
+                        // Create an anchor tag that opens in a new tab
+                        return `
+                            <p>
+                                <strong>📄 Embedded Excel File:</strong> 
+                                <a href="${url}" target="_blank" rel="noopener noreferrer">${fileName}</a>
+                            </p>`;
+                    })
+                );
+            }
+        });
+
+        const allLinks = await Promise.all(excelLinkPromises);
+        linksHtml = allLinks.join('');
+
+    } catch (e) {
+        console.error("Error processing docx for embedded file links:", e);
+    }
+    return linksHtml;
+}
+
+
 function loadTopicSections(el) {
   // Prevent default link behavior
   if (event) {
@@ -32,16 +70,12 @@ function loadTopicSections(el) {
         const a = document.createElement('a');
         
         a.href = '#';
-        // Use .firstChild.textContent to avoid including the '▶' from the span
         a.textContent = link.firstChild.textContent.trim();
-
-        // Re-attach the onclick event to the new quick link
         a.onclick = (e) => {
             e.preventDefault();
-            loadTopicSections(link); // Call with the ORIGINAL link element from the main nav
+            loadTopicSections(link);
         };
 
-        // Highlight the currently active topic in the quick links
         if (link.firstChild.textContent.trim() === el.firstChild.textContent.trim()) {
             a.classList.add('active-quick-link');
         }
@@ -61,15 +95,24 @@ function loadTopicSections(el) {
   const loadPromises = docFiles.map(file =>
     fetch(file)
       .then(res => res.arrayBuffer())
-      .then(buffer => mammoth.convertToHtml({ arrayBuffer: buffer }))
-      .then(result => ({ file, html: result.value }))
-      .catch(() => ({ file, html: '' }))
+      .then(async (buffer) => {
+        const mammothResult = await mammoth.convertToHtml({ arrayBuffer: buffer });
+        // Create links that open in a new tab
+        const excelLinks = await createExcelLinks(buffer);
+
+        return {
+          file,
+          html: mammothResult.value,
+          excelLinks: excelLinks
+        };
+      })
+      .catch(() => ({ file, html: '', excelLinks: '' }))
   );
 
   Promise.all(loadPromises).then(results => {
     let allMatches = '';
 
-    results.forEach(({ file, html }) => {
+    results.forEach(({ file, html, excelLinks }) => {
       const temp = document.createElement('div');
       temp.innerHTML = html;
 
@@ -92,6 +135,11 @@ function loadTopicSections(el) {
       });
 
       if (found) {
+        // Append the links to the end of the section
+        if (excelLinks) {
+          section += `<div class="embedded-excel-container">${excelLinks}</div>`;
+        }
+        
         allMatches += `<div class="section-block" style="margin-bottom:40px;">
           <h3 style="color:#444;">📄 From: ${file}</h3>
           ${section}
@@ -110,41 +158,34 @@ function filterSections() {
     const term = document.getElementById('searchBox').value;
     const viewer = document.getElementById('viewer');
 
-    // First, remove all existing highlights to handle backspace/deletions.
     const existingHighlights = viewer.querySelectorAll('span.highlight');
     existingHighlights.forEach(span => {
-        // Replace the span with its own text content
         span.replaceWith(document.createTextNode(span.textContent));
     });
-    // Normalize the viewer to merge adjacent text nodes. This is crucial.
     viewer.normalize();
 
     const safeTerm = term.trim();
     if (!safeTerm) {
-        // If the search term is empty, show all sections
         viewer.querySelectorAll('.section-block').forEach(el => el.style.display = '');
         return;
     }
 
     const regex = new RegExp(safeTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
 
-    // Recursive function to apply highlighting to all text nodes within an element
     function highlightInNode(node) {
         let foundMatch = false;
-        if (node.nodeType === 3) { // It's a text node
+        if (node.nodeType === 3) {
             const text = node.textContent;
             const frag = document.createDocumentFragment();
             let lastIndex = 0;
             let match;
 
-            regex.lastIndex = 0; // Reset regex state
+            regex.lastIndex = 0;
 
             while ((match = regex.exec(text)) !== null) {
                 foundMatch = true;
-                // Add the text before the match
                 frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
 
-                // Create and add the highlighted span
                 const span = document.createElement('span');
                 span.className = 'highlight';
                 span.textContent = match[0];
@@ -154,14 +195,10 @@ function filterSections() {
             }
 
             if (foundMatch) {
-                // Add the remaining text after the last match
                 frag.appendChild(document.createTextNode(text.slice(lastIndex)));
-                // Replace the original text node with the new fragment
                 node.replaceWith(frag);
             }
         } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
-            // It's an element node, so recurse into its children.
-            // We use Array.from to create a static copy as the list will be modified.
             Array.from(node.childNodes).forEach(child => {
                 if (highlightInNode(child)) {
                     foundMatch = true;
@@ -171,7 +208,6 @@ function filterSections() {
         return foundMatch;
     }
 
-    // Apply highlighting and hide/show the main section blocks
     viewer.querySelectorAll('.section-block').forEach(section => {
         const hasMatch = highlightInNode(section);
         section.style.display = hasMatch ? '' : 'none';
